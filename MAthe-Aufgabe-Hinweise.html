@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vektorgeometrie · Geraden</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#FBF7EF;
+    --paper-line:#E4DCC8;
+    --ink:#1F3A5F;
+    --ink-soft:#4C5F7A;
+    --pencil:#8A8371;
+    --correct:#3F7A63;
+    --correct-bg:#E7F1EA;
+    --wrong:#B4483F;
+    --wrong-bg:#F7E9E6;
+    --note:#E8C468;
+    --note-shadow:#c9a94f;
+    --display:'Space Grotesk', sans-serif;
+    --body:'Source Serif 4', serif;
+    --mono:'JetBrains Mono', monospace;
+  }
+
+  *{box-sizing:border-box;}
+
+  body{
+    margin:0;
+    background:
+      linear-gradient(var(--paper-line) 1px, transparent 1px);
+    background-size: 100% 34px;
+    background-color: var(--paper);
+    font-family: var(--body);
+    color: var(--ink);
+    min-height:100vh;
+    padding: 40px 24px 60px;
+  }
+
+  header{
+    max-width: 1040px;
+    margin: 0 auto 28px;
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+    gap:16px;
+    flex-wrap:wrap;
+  }
+  header h1{
+    font-family: var(--display);
+    font-size: 1.7rem;
+    letter-spacing: -0.02em;
+    margin:0;
+  }
+  header h1 span{ color: var(--correct); }
+
+  #topicLabel{
+    font-family: var(--mono);
+    font-size: 0.8rem;
+    color: var(--pencil);
+    border: 1px solid var(--paper-line);
+    background: #fff;
+    padding: 4px 10px;
+    border-radius: 999px;
+  }
+
+  .layout{
+    max-width: 1040px;
+    margin: 0 auto;
+    display:grid;
+    grid-template-columns: 1.4fr 1fr;
+    gap: 28px;
+    align-items:start;
+  }
+  @media (max-width: 760px){
+    .layout{ grid-template-columns: 1fr; }
+  }
+
+  .card{
+    background:#fff;
+    border:1px solid var(--paper-line);
+    border-radius: 10px;
+    box-shadow: 0 1px 0 rgba(31,58,95,0.04), 0 8px 20px -14px rgba(31,58,95,0.25);
+  }
+
+  /* --- Linke Spalte --- */
+  .task-card{ padding: 26px 26px 22px; }
+
+  .eyebrow{
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--pencil);
+    margin: 0 0 10px;
+  }
+
+  #problemText{
+    font-size: 1.25rem;
+    line-height: 1.6;
+    margin: 0 0 22px;
+  }
+
+  .solution-block{
+    border-top: 1px dashed var(--paper-line);
+    padding-top: 20px;
+  }
+
+  .solution-block > label.main-label{
+    display:block;
+    font-family: var(--display);
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: var(--ink-soft);
+    margin-bottom: 14px;
+  }
+
+  /* --- Vektorgleichung-Eingabe --- */
+  .vector-equation{
+    display:flex;
+    align-items:center;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 6px 2px 10px;
+  }
+
+  .veq-symbol{
+    font-family: var(--mono);
+    font-size: 1.15rem;
+    color: var(--ink);
+    font-weight: 700;
+    flex: none;
+  }
+
+  .veq-plus{
+    font-family: var(--mono);
+    font-size: 1.3rem;
+    color: var(--ink-soft);
+    flex: none;
+    padding: 0 2px;
+  }
+
+  .veq-scalar{
+    font-family: var(--mono);
+    font-size: 1.05rem;
+    color: var(--ink-soft);
+    font-style: italic;
+    flex: none;
+  }
+
+  .vector-box{
+    display:flex;
+    align-items:center;
+    flex: none;
+  }
+
+  .bracket{
+    width: 9px;
+    align-self: stretch;
+    border: 2.5px solid var(--ink-soft);
+    flex: none;
+  }
+  .bracket.left{
+    border-right: none;
+    border-radius: 5px 0 0 5px;
+  }
+  .bracket.right{
+    border-left: none;
+    border-radius: 0 5px 5px 0;
+  }
+
+  .vector-columns{
+    display:flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 4px 3px;
+  }
+
+  .vector-columns input{
+    width: 58px;
+    font-family: var(--mono);
+    font-size: 0.95rem;
+    text-align:center;
+    padding: 6px 4px;
+    border: 1.5px solid var(--paper-line);
+    border-radius: 5px;
+    background: #FEFDFB;
+    color: var(--ink);
+  }
+  .vector-columns input:focus{
+    outline:none;
+    border-color: var(--ink-soft);
+  }
+
+  .veq-hint{
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    color: var(--pencil);
+    margin-top: 4px;
+  }
+
+  .task-actions{
+    display:flex;
+    gap:10px;
+    margin-top: 16px;
+    flex-wrap: wrap;
+  }
+
+  button{
+    font-family: var(--display);
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+    border-radius: 7px;
+    border: none;
+    padding: 10px 18px;
+    transition: transform .08s ease, box-shadow .15s ease;
+  }
+  button:active{ transform: translateY(1px); }
+
+  #checkBtn{ background: var(--ink); color:#fff; }
+  #checkBtn:hover{ box-shadow: 0 4px 12px -4px rgba(31,58,95,0.5); }
+
+  #feedback{
+    margin-top: 16px;
+    padding: 12px 14px;
+    border-radius: 7px;
+    font-family: var(--display);
+    font-size: 0.9rem;
+    display:none;
+    line-height:1.5;
+  }
+  #feedback.show{ display:block; }
+  #feedback.correct{ background: var(--correct-bg); color: var(--correct); }
+  #feedback.wrong{ background: var(--wrong-bg); color: var(--wrong); }
+
+  /* --- Rechte Spalte: Hinweise --- */
+  .hints-heading{
+    font-family: var(--display);
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: var(--ink-soft);
+    margin: 0 0 12px 4px;
+  }
+
+  .hint{
+    position: relative;
+    background: #FFFDF6;
+    border: 1px solid var(--paper-line);
+    border-left: 5px solid var(--note);
+    border-radius: 3px 8px 8px 3px;
+    margin-bottom: 12px;
+    box-shadow: 2px 3px 0 rgba(31,58,95,0.03);
+    overflow: hidden;
+  }
+
+  .hint-toggle{
+    width:100%;
+    background: none;
+    border: none;
+    text-align: left;
+    padding: 13px 16px;
+    display:flex;
+    align-items:center;
+    justify-content: space-between;
+    gap: 10px;
+    font-family: var(--display);
+    font-weight: 600;
+    font-size: 0.88rem;
+    color: var(--ink);
+  }
+
+  .hint-toggle .label{
+    display:flex;
+    align-items:center;
+    gap: 9px;
+  }
+
+  .hint-toggle .idx{
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    color: #fff;
+    background: var(--note-shadow);
+    width: 20px;
+    height:20px;
+    border-radius:50%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    flex: none;
+  }
+
+  .hint-toggle .arrow{
+    font-size: 0.7rem;
+    color: var(--pencil);
+    transition: transform .2s ease;
+  }
+  .hint.open .hint-toggle .arrow{ transform: rotate(180deg); }
+
+  .hint-body{
+    max-height: 0;
+    overflow:hidden;
+    transition: max-height .25s ease, padding .25s ease;
+    font-size: 0.92rem;
+    line-height: 1.5;
+    color: var(--ink-soft);
+    padding: 0 16px;
+    white-space: pre-wrap;
+  }
+  .hint.open .hint-body{
+    max-height: 260px;
+    padding: 0 16px 15px;
+  }
+
+  footer{
+    max-width: 1040px;
+    margin: 32px auto 0;
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    color: var(--pencil);
+    text-align:center;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Vektor<span>geometrie</span></h1>
+  <div id="topicLabel">Geradengleichung in Parameterform</div>
+</header>
+
+<div class="layout">
+
+  <!-- LINKE SPALTE -->
+  <div class="task-card card">
+    <p class="eyebrow">Aufgabe</p>
+    <p id="problemText"></p>
+
+    <div class="solution-block">
+      <label class="main-label">Deine Geradengleichung:</label>
+
+      <div class="vector-equation">
+        <span class="veq-symbol">g: x&#8407; =</span>
+
+        <div class="vector-box">
+          <div class="bracket left"></div>
+          <div class="vector-columns">
+            <input type="text" id="s1" inputmode="decimal" aria-label="Stützvektor x1">
+            <input type="text" id="s2" inputmode="decimal" aria-label="Stützvektor x2">
+            <input type="text" id="s3" inputmode="decimal" aria-label="Stützvektor x3">
+          </div>
+          <div class="bracket right"></div>
+        </div>
+
+        <span class="veq-plus">+</span>
+        <span class="veq-scalar">t &middot;</span>
+
+        <div class="vector-box">
+          <div class="bracket left"></div>
+          <div class="vector-columns">
+            <input type="text" id="d1" inputmode="decimal" aria-label="Richtungsvektor x1">
+            <input type="text" id="d2" inputmode="decimal" aria-label="Richtungsvektor x2">
+            <input type="text" id="d3" inputmode="decimal" aria-label="Richtungsvektor x3">
+          </div>
+          <div class="bracket right"></div>
+        </div>
+      </div>
+      <p class="veq-hint">Zahlen oder Brüche wie 3/2 möglich. t bleibt als Variable stehen.</p>
+
+      <div class="task-actions">
+        <button id="checkBtn">Überprüfen</button>
+      </div>
+      <div id="feedback"></div>
+    </div>
+  </div>
+
+  <!-- RECHTE SPALTE: HINWEISE -->
+  <div>
+    <p class="hints-heading">Hinweise</p>
+    <div id="hintsContainer"></div>
+  </div>
+
+</div>
+
+<footer>Tipp: Öffne erst einen Hinweis, wenn du selbst nicht mehr weiterkommst.</footer>
+
+<script>
+  // ---------------------------------------------------------------
+  // Aufgabe + Hinweise. Beides hier direkt anpassen:
+  // - problem.text / problem.solutionNote: Aufgabentext
+  // - problem.support / problem.direction: korrekte Lösung für die
+  //   automatische Überprüfung (Stützvektor, Richtungsvektor)
+  // - hints: genau 4 Einträge, die als aufklappbare Felder rechts
+  //   erscheinen. Jeder Eintrag ist einfach ein Text-String -
+  //   zum Ändern einfach den Text zwischen den Anführungszeichen
+  //   ersetzen.
+  // ---------------------------------------------------------------
+  const problem = {
+    topic: "Geradengleichung aufstellen",
+    text: "Gegeben sind die Punkte A(1|2|3) und B(4|0|6).\n\nStelle eine Gleichung der Geraden g durch A und B in Vektorform (Parameterform) auf. Trage den Stützvektor und den Richtungsvektor in die Felder ein.",
+    support: [1, 2, 3],   // A
+    direction: [3, -2, 3] // B - A
+  };
+
+  const hints = [
+    "Überlege zuerst: Was brauchst du grundsätzlich, um eine Gerade in Vektorform aufzustellen? Welche zwei Bausteine hat die Gleichung g: x⃗ = Stützvektor + t · Richtungsvektor?",
+    "Der Stützvektor ist einfach der Ortsvektor eines beliebigen Punktes, der auf der Geraden liegt. Du kannst dafür z. B. direkt A oder B verwenden.",
+    "Der Richtungsvektor gibt an, in welche Richtung die Gerade verläuft. Er lässt sich berechnen, indem du die Koordinaten der beiden Punkte voneinander abziehst: B − A (jeweils x-, y- und z-Koordinate einzeln).",
+    "Rechne konkret: B − A = (4−1, 0−2, 6−3) = (3, −2, 3). Damit lautet eine mögliche Geradengleichung: g: x⃗ = (1,2,3) + t·(3,−2,3). Denk daran: auch B als Stützvektor oder ein Vielfaches des Richtungsvektors (z. B. (−3,2,−3)) wäre richtig."
+  ];
+
+  const problemText = document.getElementById('problemText');
+  const topicLabel = document.getElementById('topicLabel');
+  const feedback = document.getElementById('feedback');
+  const checkBtn = document.getElementById('checkBtn');
+  const hintsContainer = document.getElementById('hintsContainer');
+
+  const fields = ['s1','s2','s3','d1','d2','d3'].map(id => document.getElementById(id));
+
+  function loadProblem(){
+    topicLabel.textContent = problem.topic;
+    problemText.textContent = problem.text;
+    fields.forEach(f => f.value = "");
+    feedback.className = "";
+    feedback.textContent = "";
+
+    hintsContainer.innerHTML = "";
+    hints.forEach((hintTextValue, i) => {
+      const hint = document.createElement('div');
+      hint.className = 'hint';
+      hint.innerHTML = `
+        <button class="hint-toggle" type="button">
+          <span class="label"><span class="idx">${i + 1}</span> Hinweis ${i + 1}</span>
+          <span class="arrow">▼</span>
+        </button>
+        <div class="hint-body">${hintTextValue}</div>
+      `;
+      hint.querySelector('.hint-toggle').addEventListener('click', () => {
+        hint.classList.toggle('open');
+      });
+      hintsContainer.appendChild(hint);
+    });
+  }
+
+  // Parst Eingaben wie "3", "-2", "3/2", "1,5" zu einer Zahl.
+  function parseNumber(str){
+    if (!str) return null;
+    const cleaned = str.trim().replace(',', '.');
+    if (cleaned === "") return null;
+
+    const fracMatch = cleaned.match(/^(-?\d+(\.\d+)?)\s*\/\s*(-?\d+(\.\d+)?)$/);
+    if (fracMatch){
+      const num = parseFloat(fracMatch[1]);
+      const den = parseFloat(fracMatch[3]);
+      if (den === 0) return null;
+      return num / den;
+    }
+
+    const val = parseFloat(cleaned);
+    return isNaN(val) ? null : val;
+  }
+
+  function cross(a, b){
+    return [
+      a[1]*b[2] - a[2]*b[1],
+      a[2]*b[0] - a[0]*b[2],
+      a[0]*b[1] - a[1]*b[0]
+    ];
+  }
+
+  function isZeroVector(v, eps = 1e-6){
+    return Math.abs(v[0]) < eps && Math.abs(v[1]) < eps && Math.abs(v[2]) < eps;
+  }
+
+  function checkAnswer(){
+    const values = fields.map(f => parseNumber(f.value));
+
+    if (values.some(v => v === null)){
+      feedback.className = "show wrong";
+      feedback.textContent = "Bitte fülle alle sechs Felder mit Zahlen (oder Brüchen wie 3/2) aus.";
+      return;
+    }
+
+    const enteredSupport = [values[0], values[1], values[2]];
+    const enteredDirection = [values[3], values[4], values[5]];
+
+    if (isZeroVector(enteredDirection)){
+      feedback.className = "show wrong";
+      feedback.textContent = "Der Richtungsvektor darf nicht der Nullvektor sein.";
+      return;
+    }
+
+    // 1) Richtungsvektor muss parallel zum korrekten Richtungsvektor sein
+    const dirCross = cross(enteredDirection, problem.direction);
+    const directionOk = isZeroVector(dirCross);
+
+    // 2) Stützpunkt muss auf der Geraden liegen
+    const diff = [
+      enteredSupport[0] - problem.support[0],
+      enteredSupport[1] - problem.support[1],
+      enteredSupport[2] - problem.support[2]
+    ];
+    const supportOnLine = isZeroVector(diff) || isZeroVector(cross(diff, problem.direction));
+
+    if (directionOk && supportOnLine){
+      feedback.className = "show correct";
+      feedback.textContent = "✓ Richtig! Das ist eine gültige Vektorgleichung dieser Geraden.";
+    } else {
+      feedback.className = "show wrong";
+      let msg = "✗ Das passt noch nicht ganz. ";
+      if (!supportOnLine) msg += "Der Stützvektor liegt nicht auf der gesuchten Geraden. ";
+      if (!directionOk) msg += "Der Richtungsvektor zeigt nicht in die richtige Richtung. ";
+      msg += "Schau dir gern einen der Hinweise an.";
+      feedback.textContent = msg;
+    }
+  }
+
+  checkBtn.addEventListener('click', checkAnswer);
+
+  loadProblem();
+</script>
+
+</body>
+</html>
