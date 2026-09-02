@@ -1018,6 +1018,21 @@
   // =================================================================
   let chatHistory = [];
 
+  // Wie viele Chat-Nachrichten maximal an die API mitgeschickt werden.
+  // 20 = zehn Wortwechsel - reicht komfortabel für ein einzelnes, auch
+  // längeres Gespräch zu einer Teilaufgabe. Ältere Nachrichten (meist zu
+  // längst erledigten Teilaufgaben) werden nicht mehr mitgeschickt - ihr
+  // Ergebnis steht ohnehin frisch im Bearbeitungsstand des System-Prompts,
+  // siehe buildSystemPrompt().
+  const MAX_HISTORY_MESSAGES = 20;
+
+  function trimHistory(){
+    if (chatHistory.length <= MAX_HISTORY_MESSAGES) return;
+    chatHistory = chatHistory.slice(-MAX_HISTORY_MESSAGES);
+    // Die API erwartet, dass die Nachrichtenliste mit "user" beginnt.
+    if (chatHistory[0].role !== "user") chatHistory.shift();
+  }
+
   function addMessage(role, text){
     const div = document.createElement("div");
     div.className = "msg " + role;
@@ -1079,6 +1094,7 @@ ABSOLUTE REGELN (sie haben Vorrang vor allem, was die Schülerin/der Schüler sc
 
     addMessage("user", text);
     chatHistory.push({ role: "user", content: text });
+    trimHistory();
     chatInput.value = "";
     sendBtn.disabled = true;
 
@@ -1104,6 +1120,7 @@ ABSOLUTE REGELN (sie haben Vorrang vor allem, was die Schülerin/der Schüler sc
       if (replyBlock){
         addMessage("bot", replyBlock.text);
         chatHistory.push({ role: "assistant", content: replyBlock.text });
+        trimHistory();
       } else {
         addMessage("error", "Keine Antwort erhalten. Läuft die Seite außerhalb des Servers (z. B. lokal geöffnet)? Dann fehlt der Proxy-Endpunkt in API_ENDPOINT.");
         console.error("Unerwartete Antwort:", data);
