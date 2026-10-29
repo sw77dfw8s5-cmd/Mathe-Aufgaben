@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Lineare Funktionen – Übung</title>
+<!--
+  Handy-/Tablet-Übung zur 1. Stunde "Lineare Funktionen" (Dokument 48).
+  Eine Datei, keine externen Bibliotheken, keine Netzwerkanfragen,
+  keine Datenspeicherung. Aufruf über QR-Code.
+
+  Pool: 48 Aufgaben, je 12 der Typen
+    A  Term zum Graphen         (m und n ablesen)
+    B  Funktionswerte berechnen (auch Terme nicht in Normalform)
+    C  Gerade zeichnen          (zwei Gitterpunkte antippen)
+    D  Gleichung zum Graphen    (4 Graphen; Ablenker: Vorzeichen von m,
+                                 m und n vertauscht, Kehrwert von m)
+  Pro Runde 6 Aufgaben, jeder Typ mindestens einmal.
+  Zahlen werden exakt als Brüche (BigInt) verglichen.
+  Gegenprüfung des Pools: pruefe_pool_48.py (sympy).
+  Farben wie im Skript: Graph blau, Δx orange, Δy grün, S_y rot.
+-->
+<style>
+:root{
+  --fuell:#D8E1E0; --rahmen:#555555; --grund:#FFFDEE; --bg:#F2F4F3;
+  --graph:#1F5C87; --dx:#C2621A; --dy:#2E7D32; --sy:#A32B2B;
+  --ok:#2E7D32; --okhell:#E8F3E9; --falsch:#A32B2B; --falschhell:#FAEDED;
+  --text:#1d1f20; --grau:#6b7478;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--text);
+  font:17px/1.45 -apple-system,BlinkMacSystemFont,"Helvetica Neue",Helvetica,Arial,sans-serif}
+button{font:inherit;color:inherit;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+header{position:sticky;top:0;z-index:5;background:#fff;border-bottom:1.5px solid var(--rahmen);
+  padding:calc(8px + env(safe-area-inset-top)) 14px 8px}
+.kopf{max-width:560px;margin:0 auto;display:flex;align-items:center;gap:10px}
+.kopf h1{font-size:16px;margin:0;flex:1;line-height:1.2}
+.chip{background:var(--fuell);font-weight:700;font-size:14px;padding:4px 9px;white-space:nowrap}
+.fortschritt{max-width:560px;margin:7px auto 0;display:flex;gap:4px}
+.fortschritt span{flex:1;height:6px;background:#e3e7e6}
+.fortschritt span.aktiv{background:var(--rahmen)}
+.fortschritt span.r{background:var(--ok)} .fortschritt span.f{background:var(--falsch)}
+main{max-width:560px;margin:0 auto;padding:12px 12px calc(24px + env(safe-area-inset-bottom))}
+.karte{background:#fff;border:1.5px solid var(--rahmen)}
+.karte .titel{background:var(--fuell);border-bottom:1px solid var(--rahmen);padding:7px 12px;
+  font-weight:700;font-size:15px;display:flex;justify-content:space-between;gap:8px}
+.karte .inhalt{padding:12px}
+.auftrag{margin:0 0 10px}
+.formel{white-space:nowrap}
+i.v{font-family:"Times New Roman",Times,serif;font-size:1.12em;font-style:italic}
+.fr{display:inline-flex;flex-direction:column;vertical-align:middle;text-align:center;
+  font-size:.8em;line-height:1.08;margin:0 .1em}
+.fr>span:first-child{border-bottom:1.4px solid currentColor;padding:0 .18em}
+.fr>span:last-child{padding:0 .18em}
+svg.plot{display:block;width:100%;height:auto;background:#fff;user-select:none;-webkit-user-select:none}
+svg.tippen{cursor:crosshair;touch-action:none}
+.felder{display:flex;gap:10px;margin:12px 0 10px}
+.feld{flex:1;min-height:54px;border:1.5px solid #b9c1bf;background:#fff;display:flex;align-items:center;
+  padding:0 10px;gap:6px;font-size:20px;text-align:left}
+.feld .lab{color:var(--grau);font-size:17px;white-space:nowrap}
+.feld .wert{flex:1;min-height:1.2em}
+.feld.aktiv{border-color:var(--graph);box-shadow:0 0 0 2px var(--graph) inset}
+.feld.aktiv .wert:empty::after,.feld.aktiv .wert::after{content:"";display:inline-block;width:2px;height:1.05em;
+  background:var(--graph);vertical-align:-3px;margin-left:1px;animation:blink 1s steps(1) infinite}
+.feld.gesperrt{background:#f6f7f7}
+.feld.gesperrt .wert::after{display:none}
+.feld.r{border-color:var(--ok);background:var(--okhell)} .feld.f{border-color:var(--falsch);background:var(--falschhell)}
+@keyframes blink{50%{opacity:0}}
+.tasten{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-top:4px}
+.tasten button{min-height:50px;border:1px solid #c5ccca;background:#fafbfb;font-size:21px;border-radius:4px}
+.tasten button:active{background:var(--fuell)}
+.tasten .op{background:#eef1f0}
+.knoepfe{display:flex;gap:10px;margin-top:12px}
+.knopf{flex:1;min-height:52px;border:1.5px solid var(--rahmen);background:var(--rahmen);color:#fff;
+  font-weight:700;font-size:17px;border-radius:4px}
+.knopf.hell{background:#fff;color:var(--rahmen)}
+.knopf:disabled{opacity:.38}
+.hinweis{font-size:15px;color:var(--grau);margin:8px 0 0}
+.warn{color:var(--falsch);font-size:15px;margin:8px 0 0;min-height:0}
+.rueck{margin-top:12px;padding:10px 12px;border:1.5px solid}
+.rueck.r{border-color:var(--ok);background:var(--okhell)} .rueck.f{border-color:var(--falsch);background:var(--falschhell)}
+.rueck b{display:block;margin-bottom:2px}
+.wahl{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px}
+.wahl button{border:1.5px solid #b9c1bf;background:#fff;padding:4px 4px 2px;border-radius:4px;position:relative}
+.wahl button .bu{position:absolute;left:5px;top:3px;font-weight:700;font-size:15px;background:#fff;padding:0 3px}
+.wahl button.sel{border-color:var(--graph);box-shadow:0 0 0 2px var(--graph) inset}
+.wahl button.r{border-color:var(--ok);box-shadow:0 0 0 3px var(--ok) inset}
+.wahl button.f{border-color:var(--falsch);box-shadow:0 0 0 3px var(--falsch) inset}
+.ergebnis{text-align:center;padding:18px 12px}
+.ergebnis .gross{font-size:44px;font-weight:700;margin:4px 0}
+.liste{list-style:none;padding:0;margin:14px 0 0;text-align:left}
+.liste li{display:flex;gap:10px;padding:8px 2px;border-top:1px solid #e3e7e6;align-items:center}
+.liste .z{font-weight:700;width:1.4em;text-align:center}
+.liste .r{color:var(--ok)} .liste .f{color:var(--falsch)}
+.legende{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:14px;color:var(--grau);margin-top:6px}
+.legende span::before{content:"";display:inline-block;width:14px;height:3px;vertical-align:middle;margin-right:5px;background:currentColor}
+</style>
+</head>
+<body>
+<header>
+  <div class="kopf">
+    <h1>Lineare Funktionen</h1>
+    <span class="chip" id="nr">Aufgabe 1 von 6</span>
+    <span class="chip" id="punkte">Punkte: 0</span>
+  </div>
+  <div class="fortschritt" id="balken"></div>
+</header>
+<main id="app"></main>
+
+<script>
+"use strict";
+// =====================================================================
+//  Aufgabenpool (strenges JSON zwischen den Markierungen -- wird von
+//  pruefe_pool_48.py ausgelesen und mathematisch gegengeprüft).
+//  Zahlen als Zeichenketten: "-3", "1/2". Term-Schreibweise bei B:
+//  [a/b] = Bruch, "-" wird als echtes Minus gesetzt, "," = Dezimalkomma.
+//  Ablenker bei D: "vz" Vorzeichen von m vertauscht, "tausch" m und n
+//  vertauscht, "kehr" Kehrwert des Anstiegs.
+// =====================================================================
+const POOL = /*POOL-START*/[
+ {"id":"A01","typ":"A","m":"2","n":"-1"},
+ {"id":"A02","typ":"A","m":"-1","n":"3"},
+ {"id":"A03","typ":"A","m":"1/2","n":"1"},
+ {"id":"A04","typ":"A","m":"-2/3","n":"2"},
+ {"id":"A05","typ":"A","m":"3","n":"-4"},
+ {"id":"A06","typ":"A","m":"-1/2","n":"-2"},
+ {"id":"A07","typ":"A","m":"1","n":"0"},
+ {"id":"A08","typ":"A","m":"0","n":"3"},
+ {"id":"A09","typ":"A","m":"3/4","n":"-3"},
+ {"id":"A10","typ":"A","m":"-3","n":"5"},
+ {"id":"A11","typ":"A","m":"2/3","n":"-1"},
+ {"id":"A12","typ":"A","m":"-3/2","n":"1"},
+
+ {"id":"B01","typ":"B","term":"3x - 5","m":"3","n":"-5","a":"1/3","loesung":"-4"},
+ {"id":"B02","typ":"B","term":"-2x + 1","m":"-2","n":"1","a":"-3","loesung":"7"},
+ {"id":"B03","typ":"B","term":"3 - [1/2]x","m":"-1/2","n":"3","a":"-4","loesung":"5"},
+ {"id":"B04","typ":"B","term":"2(x - 1)","m":"2","n":"-2","a":"-2","loesung":"-6"},
+ {"id":"B05","typ":"B","term":"[1/2]x + 3","m":"1/2","n":"3","a":"5","loesung":"11/2"},
+ {"id":"B06","typ":"B","term":"-(x + 3)","m":"-1","n":"-3","a":"-7","loesung":"4"},
+ {"id":"B07","typ":"B","term":"0,5x - 2","m":"1/2","n":"-2","a":"-6","loesung":"-5"},
+ {"id":"B08","typ":"B","term":"4 - x","m":"-1","n":"4","a":"6","loesung":"-2"},
+ {"id":"B09","typ":"B","term":"-[2/3]x + 1","m":"-2/3","n":"1","a":"6","loesung":"-3"},
+ {"id":"B10","typ":"B","term":"3(2 - x)","m":"-3","n":"6","a":"-1","loesung":"9"},
+ {"id":"B11","typ":"B","term":"2 + [x/4]","m":"1/4","n":"2","a":"-2","loesung":"3/2"},
+ {"id":"B12","typ":"B","term":"2(x + 3) - 1","m":"2","n":"5","a":"0","loesung":"5"},
+
+ {"id":"C01","typ":"C","m":"2","n":"-1"},
+ {"id":"C02","typ":"C","m":"-1","n":"4"},
+ {"id":"C03","typ":"C","m":"1/2","n":"1"},
+ {"id":"C04","typ":"C","m":"-3","n":"2"},
+ {"id":"C05","typ":"C","m":"2/3","n":"-2"},
+ {"id":"C06","typ":"C","m":"-1/2","n":"3"},
+ {"id":"C07","typ":"C","m":"0","n":"-2"},
+ {"id":"C08","typ":"C","m":"3","n":"-4"},
+ {"id":"C09","typ":"C","m":"-3/4","n":"2"},
+ {"id":"C10","typ":"C","m":"1/3","n":"-1"},
+ {"id":"C11","typ":"C","m":"-2","n":"-3"},
+ {"id":"C12","typ":"C","m":"3/2","n":"0"},
+
+ {"id":"D01","typ":"D","m":"2","n":"1","ablenker":[
+   {"m":"-2","n":"1","art":"vz"},{"m":"1","n":"2","art":"tausch"},{"m":"1/2","n":"1","art":"kehr"}]},
+ {"id":"D02","typ":"D","m":"-3","n":"2","ablenker":[
+   {"m":"3","n":"2","art":"vz"},{"m":"2","n":"-3","art":"tausch"},{"m":"-1/3","n":"2","art":"kehr"}]},
+ {"id":"D03","typ":"D","m":"1/2","n":"-2","ablenker":[
+   {"m":"-1/2","n":"-2","art":"vz"},{"m":"-2","n":"1/2","art":"tausch"},{"m":"2","n":"-2","art":"kehr"}]},
+ {"id":"D04","typ":"D","m":"3","n":"-1","ablenker":[
+   {"m":"-3","n":"-1","art":"vz"},{"m":"-1","n":"3","art":"tausch"},{"m":"1/3","n":"-1","art":"kehr"}]},
+ {"id":"D05","typ":"D","m":"-2","n":"-3","ablenker":[
+   {"m":"2","n":"-3","art":"vz"},{"m":"-3","n":"-2","art":"tausch"},{"m":"-1/2","n":"-3","art":"kehr"}]},
+ {"id":"D06","typ":"D","m":"4","n":"2","ablenker":[
+   {"m":"-4","n":"2","art":"vz"},{"m":"2","n":"4","art":"tausch"},{"m":"1/4","n":"2","art":"kehr"}]},
+ {"id":"D07","typ":"D","m":"-1/2","n":"1","ablenker":[
+   {"m":"1/2","n":"1","art":"vz"},{"m":"1","n":"-1/2","art":"tausch"},{"m":"-2","n":"1","art":"kehr"}]},
+ {"id":"D08","typ":"D","m":"2","n":"-4","ablenker":[
+   {"m":"-2","n":"-4","art":"vz"},{"m":"-4","n":"2","art":"tausch"},{"m":"1/2","n":"-4","art":"kehr"}]},
+ {"id":"D09","typ":"D","m":"-4","n":"3","ablenker":[
+   {"m":"4","n":"3","art":"vz"},{"m":"3","n":"-4","art":"tausch"},{"m":"-1/4","n":"3","art":"kehr"}]},
+ {"id":"D10","typ":"D","m":"3","n":"2","ablenker":[
+   {"m":"-3","n":"2","art":"vz"},{"m":"2","n":"3","art":"tausch"},{"m":"1/3","n":"2","art":"kehr"}]},
+ {"id":"D11","typ":"D","m":"2/3","n":"-1","ablenker":[
+   {"m":"-2/3","n":"-1","art":"vz"},{"m":"-1","n":"2/3","art":"tausch"},{"m":"3/2","n":"-1","art":"kehr"}]},
+ {"id":"D12","typ":"D","m":"-2","n":"5","ablenker":[
+   {"m":"2","n":"5","art":"vz"},{"m":"5","n":"-2","art":"tausch"},{"m":"-1/2","n":"5","art":"kehr"}]}
+]/*POOL-END*/;
+
+const TYPNAME = {A:"Term zum Graphen", B:"Funktionswerte berechnen",
+                 C:"Gerade zeichnen", D:"Gleichung zum Graphen zuordnen"};
+const RUNDE = 6;
+
+// =====================================================================
+//  Rationale Zahlen, exakt (BigInt)
+// =====================================================================
+const gcd = (a, b) => { a = a < 0n ? -a : a; b = b < 0n ? -b : b;
+  while (b) [a, b] = [b, a % b]; return a; };
+function Q(n, d = 1n) {
+  n = BigInt(n); d = BigInt(d);
+  if (d === 0n) throw new Error("Nenner 0");
+  if (d < 0n) { n = -n; d = -d; }
+  const g = gcd(n, d) || 1n;
+  return { n: n / g, d: d / g };
+}
+const add = (a, b) => Q(a.n * b.d + b.n * a.d, a.d * b.d);
+const sub = (a, b) => Q(a.n * b.d - b.n * a.d, a.d * b.d);
+const mul = (a, b) => Q(a.n * b.n, a.d * b.d);
+const div = (a, b) => Q(a.n * b.d, a.d * b.n);
+const eq  = (a, b) => a.n === b.n && a.d === b.d;
+const neg = a => Q(-a.n, a.d);
+const abs = a => Q(a.n < 0n ? -a.n : a.n, a.d);
+const toF = a => Number(a.n) / Number(a.d);
+const istGanz = a => a.d === 1n;
+const f = (m, n, x) => add(mul(m, x), n);   // Funktionswert mx + n
+
+// Dezimalzahl "12.345" -> exakt 12345/1000
+function dezQ(t) {
+  if (t.startsWith(".")) t = "0" + t;
+  const [i, nk = ""] = t.split(".");
+  return Q(BigInt(i + nk), 10n ** BigInt(nk.length));
+}
+
+// Eingabe lesen: ganze Zahl, Dezimalzahl (Komma oder Punkt), Bruch a/b,
+// jeweils mit Minus (auch echtes Minus −). Ungültig -> null.
+function lies(roh) {
+  const s = String(roh).replace(/[−–‒]/g, "-").replace(/\s+/g, "").replace(/,/g, ".");
+  const t = s.match(/^(-?)(\d+(?:\.\d+)?|\.\d+)(?:\/(-?)(\d+(?:\.\d+)?|\.\d+))?$/);
+  if (!t) return null;
+  let v = dezQ(t[2]);
+  if (t[1]) v = neg(v);
+  if (t[4] !== undefined) {
+    let nenner = dezQ(t[4]);
+    if (nenner.n === 0n) return null;
+    if (t[3]) nenner = neg(nenner);
+    v = div(v, nenner);
+  }
+  return v;
+}
+
+// =====================================================================
+//  Darstellung: echtes Minus, Brüche gestapelt, Dezimalkomma
+// =====================================================================
+const MINUS = "−";
+const bruch = (p, q) => `<span class="fr"><span>${p}</span><span>${q}</span></span>`;
+const X = '<i class="v">x</i>';
+function zahl(r, klammer = false) {
+  const negativ = r.n < 0n, a = negativ ? -r.n : r.n;
+  let s = (negativ ? MINUS : "") + (r.d === 1n ? String(a) : bruch(a, r.d));
+  return klammer && negativ ? "(" + s + ")" : s;
+}
+// abbrechende Dezimalzahl mit Komma, sonst null
+function dezimal(r) {
+  let d = r.d; while (d % 2n === 0n) d /= 2n; while (d % 5n === 0n) d /= 5n;
+  if (d !== 1n || r.d === 1n) return null;
+  let k = 0; while ((10n ** BigInt(k)) % r.d !== 0n) k++;
+  const z = r.n * (10n ** BigInt(k)) / r.d, negativ = z < 0n;
+  const a = (negativ ? -z : z).toString().padStart(k + 1, "0");
+  return (negativ ? MINUS : "") + a.slice(0, -k) + "," + a.slice(-k);
+}
+const zahlVoll = r => { const d = dezimal(r); return d ? `${zahl(r)} = ${d}` : zahl(r); };
+
+// Normalform mx + n
+function lin(m, n) {
+  let s = "";
+  if (m.n !== 0n) {
+    const a = abs(m);
+    s = (m.n < 0n ? MINUS : "") + (eq(a, Q(1)) ? "" : zahl(a)) + X;
+  }
+  if (n.n !== 0n || s === "") {
+    if (s === "") s = zahl(n);
+    else s += (n.n < 0n ? " " + MINUS + " " : " + ") + zahl(abs(n));
+  }
+  return s;
+}
+const fGl = (m, n, name = "f") => `<span class="formel"><i class="v">${name}</i>(${X}) = ${lin(m, n)}</span>`;
+const punkt = (x, y, name = "P") => `${name}(${zahl(x)};${zahl(y)})`;
+
+// Term-Schreibweise des Pools setzen; mit wert != null wird x ersetzt.
+function term(t, wert = null) {
+  const tok = t.match(/\[[^\]]+\]|x|\d+(?:,\d+)?|./g);
+  let out = "", vorher = "";
+  const ersetze = (inBruch) => {
+    if (wert === null) return X;
+    const malpunkt = !inBruch && /^[\d\])]/.test(vorher.slice(-1)) ? "·" : "";
+    return malpunkt + zahl(wert, true);
+  };
+  for (const k of tok) {
+    if (k.startsWith("[")) {
+      const [p, q] = k.slice(1, -1).split("/");
+      const teil = s => s === "x" ? ersetze(true) : s.replace(/-/g, MINUS);
+      out += bruch(teil(p), teil(q));
+    } else if (k === "x") out += ersetze(false);
+    else if (k === "-") out += MINUS;
+    else out += k;
+    if (k !== " ") vorher = k.startsWith("[") ? "]" : k;
+  }
+  return out;
+}
+
+// =====================================================================
+//  Koordinatensystem als SVG (-6 bis 6, Hefter-Gitter: 2 Kästchen = 1 E.)
+// =====================================================================
+const R = 6;
+let svgNr = 0;
+function koordinatensystem(klein = false) {
+  const U = 24, P = 16, B = 2 * R * U + 2 * P;
+  const px = x => P + (x + R) * U, py = y => P + (R - y) * U;
+  const id = "pf" + (++svgNr);
+  let s = `<svg class="plot" viewBox="0 0 ${B} ${B}" xmlns="http://www.w3.org/2000/svg">
+    <defs><marker id="${id}" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7"
+      orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#333"/></marker></defs>`;
+  for (let k = -2 * R; k <= 2 * R; k++) {          // Kästchen und Einheiten
+    const v = k / 2, einheit = k % 2 === 0;
+    if (klein && !einheit) continue;
+    const farbe = einheit ? "#aab3b1" : "#d9dedd", w = einheit ? 0.9 : 0.6;
+    s += `<line x1="${px(v)}" y1="${py(-R)}" x2="${px(v)}" y2="${py(R)}" stroke="${farbe}" stroke-width="${w}"/>`;
+    s += `<line x1="${px(-R)}" y1="${py(v)}" x2="${px(R)}" y2="${py(v)}" stroke="${farbe}" stroke-width="${w}"/>`;
+  }
+  s += `<line x1="${px(-R) - 4}" y1="${py(0)}" x2="${px(R) + 11}" y2="${py(0)}" stroke="#333" stroke-width="1.4" marker-end="url(#${id})"/>`;
+  s += `<line x1="${px(0)}" y1="${py(-R) + 4}" x2="${px(0)}" y2="${py(R) - 11}" stroke="#333" stroke-width="1.4" marker-end="url(#${id})"/>`;
+  const fs = klein ? 20 : 10.5;
+  for (let k = -R; k <= R; k++) {
+    if (k === 0 || (klein && k % 2 !== 0)) continue;
+    const t = String(k).replace("-", MINUS);
+    s += `<text x="${px(k)}" y="${py(0) + fs + 2}" font-size="${fs}" text-anchor="middle" fill="#333" stroke="#fff" stroke-width="3" paint-order="stroke">${t}</text>`;
+    s += `<text x="${px(0) - 4}" y="${py(k) + fs * 0.36}" font-size="${fs}" text-anchor="end" fill="#333" stroke="#fff" stroke-width="3" paint-order="stroke">${t}</text>`;
+  }
+  if (!klein) {
+    s += `<text x="${px(R) + 6}" y="${py(0) - 6}" font-size="12" font-style="italic" fill="#333">x</text>`;
+    s += `<text x="${px(0) + 6}" y="${py(R) - 2}" font-size="12" font-style="italic" fill="#333">y</text>`;
+  }
+  s += `<g class="ebene"></g></svg>`;
+  const halter = document.createElement("div");
+  halter.innerHTML = s;
+  const svg = halter.firstElementChild;
+  return { svg, ebene: svg.querySelector(".ebene"), px, py, U };
+}
+function svgEl(tag, attr) {
+  const e = document.createElementNS("http://www.w3.org/2000/svg", tag);
+  for (const k in attr) e.setAttribute(k, attr[k]);
+  return e;
+}
+// Teilstück der Geraden y = m x + n im sichtbaren Quadrat
+function strecke(m, n) {
+  const mf = toF(m), nf = toF(n);
+  if (mf === 0) return Math.abs(nf) <= R ? [-R, nf, R, nf] : null;
+  const xa = Math.max(-R, Math.min((R - nf) / mf, (-R - nf) / mf));
+  const xb = Math.min(R, Math.max((R - nf) / mf, (-R - nf) / mf));
+  return xa < xb ? [xa, mf * xa + nf, xb, mf * xb + nf] : null;
+}
+function gerade(ks, m, n, farbe = "var(--graph)", breite = 2.6, strich = "") {
+  const s = strecke(m, n); if (!s) return;
+  ks.ebene.appendChild(svgEl("line", { x1: ks.px(s[0]), y1: ks.py(s[1]), x2: ks.px(s[2]), y2: ks.py(s[3]),
+    stroke: farbe, "stroke-width": breite, "stroke-linecap": "round", "stroke-dasharray": strich }));
+}
+function gitterpunkt(ks, x, y, farbe, r = 5, voll = true) {
+  const c = svgEl("circle", { cx: ks.px(x), cy: ks.py(y), r, fill: voll ? farbe : "#fff", stroke: farbe, "stroke-width": 2 });
+  ks.ebene.appendChild(c); return c;
+}
+function beschriftung(ks, x, y, text, farbe, anker = "start", dx = 0, dy = 0, gr = 12) {
+  const t = svgEl("text", { x: ks.px(x) + dx, y: ks.py(y) + dy, "font-size": gr, fill: farbe,
+    "text-anchor": anker, stroke: "#fff", "stroke-width": 3, "paint-order": "stroke", "font-weight": 700 });
+  t.textContent = text; ks.ebene.appendChild(t);
+}
+// S_y und Steigungsdreieck (q nach rechts, p nach oben/unten) einzeichnen
+function dreieck(ks, m, n) {
+  const x0 = 0, y0 = toF(n), q = Number(m.d), p = Number(m.n);
+  const y1 = y0 + p;
+  if (p !== 0) {
+    ks.ebene.appendChild(svgEl("polygon", { points: `${ks.px(x0)},${ks.py(y0)} ${ks.px(q)},${ks.py(y0)} ${ks.px(q)},${ks.py(y1)}`,
+      fill: "rgba(194,98,26,.14)" }));
+  }
+  ks.ebene.appendChild(svgEl("line", { x1: ks.px(x0), y1: ks.py(y0), x2: ks.px(q), y2: ks.py(y0), stroke: "var(--dx)", "stroke-width": 3.2 }));
+  beschriftung(ks, q / 2, y0, String(q), "var(--dx)", "middle", 0, p > 0 ? 15 : -6, 13);
+  if (p !== 0) {
+    ks.ebene.appendChild(svgEl("line", { x1: ks.px(q), y1: ks.py(y0), x2: ks.px(q), y2: ks.py(y1), stroke: "var(--dy)", "stroke-width": 3.2 }));
+    beschriftung(ks, q, y0 + p / 2, String(Math.abs(p)), "var(--dy)", "start", 6, 5, 13);
+  }
+  gitterpunkt(ks, 0, y0, "var(--sy)", 5.5);
+}
+
+// =====================================================================
+//  Runde und Zustand
+// =====================================================================
+const app = document.getElementById("app");
+let runde = [], pos = 0, punkte = 0, ergebnisse = [], akt = null;
+
+const mischen = a => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+function zieheRunde() {
+  const proTyp = {};
+  for (const t of POOL) (proTyp[t.typ] = proTyp[t.typ] || []).push(t);
+  const wahl = Object.keys(proTyp).map(k => mischen(proTyp[k].slice())[0]);   // jeder Typ einmal
+  const rest = mischen(POOL.filter(t => !wahl.includes(t)));
+  return mischen(wahl.concat(rest.slice(0, RUNDE - wahl.length)));
+}
+function neueRunde() {
+  runde = zieheRunde(); pos = 0; punkte = 0; ergebnisse = [];
+  zeige();
+}
+function kopf() {
+  document.getElementById("nr").textContent = pos < RUNDE ? `Aufgabe ${pos + 1} von ${RUNDE}` : "Ergebnis";
+  document.getElementById("punkte").textContent = `Punkte: ${punkte}`;
+  const b = document.getElementById("balken"); b.innerHTML = "";
+  for (let i = 0; i < RUNDE; i++) {
+    const s = document.createElement("span");
+    if (i < ergebnisse.length) s.className = ergebnisse[i] ? "r" : "f";
+    else if (i === pos) s.className = "aktiv";
+    b.appendChild(s);
+  }
+}
+
+// Gemeinsamer Rahmen einer Aufgabe
+function karte(t) {
+  app.innerHTML = `<section class="karte"><div class="titel"><span>${TYPNAME[t.typ]}</span>
+    <span>Typ ${t.typ}</span></div><div class="inhalt"></div></section>`;
+  return app.querySelector(".inhalt");
+}
+function knopfLeiste(inhalt, extra = "") {
+  const d = document.createElement("div");
+  d.innerHTML = `<p class="warn" id="warn"></p><div class="knoepfe">${extra}
+    <button class="knopf" id="pruefen" disabled>Prüfen</button></div><div id="rueck"></div>`;
+  inhalt.appendChild(d);
+  document.getElementById("pruefen").onclick = pruefe;
+}
+function setzeBereit() {
+  const k = document.getElementById("pruefen");
+  if (k && akt && !akt.gesperrt) k.disabled = !akt.bereit();
+}
+
+function zeige() {
+  kopf();
+  if (pos >= RUNDE) return zeigeErgebnis();
+  const t = runde[pos];
+  const m = lies(t.m), n = lies(t.n);
+  const inhalt = karte(t);
+  ({ A: aufgabeA, B: aufgabeB, C: aufgabeC, D: aufgabeD })[t.typ](t, m, n, inhalt);
+  window.scrollTo(0, 0);
+}
+
+function pruefe() {
+  if (!akt || akt.gesperrt || !akt.bereit()) return;
+  const e = akt.pruefen();
+  const warn = document.getElementById("warn");
+  if (e.ungueltig) { warn.textContent = e.ungueltig; return; }
+  warn.textContent = "";
+  akt.gesperrt = true;
+  if (e.ok) punkte++;
+  ergebnisse.push(e.ok);
+  const r = document.getElementById("rueck");
+  r.innerHTML = `<div class="rueck ${e.ok ? "r" : "f"}"><b>${e.ok ? "Richtig!" : "Leider falsch."}</b>${e.text}</div>
+    <div class="knoepfe"><button class="knopf" id="weiter">${pos + 1 < RUNDE ? "Weiter" : "Zum Ergebnis"}</button></div>`;
+  const kn = document.getElementById("pruefen"); kn.parentElement.remove();
+  document.querySelectorAll(".tasten").forEach(x => x.remove());
+  document.querySelectorAll(".feld").forEach(x => x.classList.remove("aktiv"));
+  document.getElementById("weiter").onclick = () => { pos++; zeige(); };
+  kopf();
+  r.scrollIntoView({ behavior: "smooth", block: "nearest" });
+}
+
+// ---------------------------------------------------------------------
+//  Eingabefelder mit eigener Tastatur (iOS-Dezimaltastatur hat kein Minus)
+// ---------------------------------------------------------------------
+function eingabe(inhalt, felder) {
+  const box = document.createElement("div");
+  box.innerHTML = `<div class="felder">${felder.map((f, i) =>
+      `<button class="feld${i === 0 ? " aktiv" : ""}" data-i="${i}" aria-label="${f.aria}"><span class="lab">${f.label}</span><span class="wert"></span></button>`).join("")}</div>
+    <div class="tasten">
+      ${["7","8","9",MINUS,"⌫","4","5","6","/",",","1","2","3","0","C"].map(k =>
+        `<button data-k="${k}" class="${/\d/.test(k) ? "" : "op"}" aria-label="${{"⌫":"Zeichen löschen",C:"Feld leeren"}[k] || k}">${k === "C" ? "C" : k}</button>`).join("")}
+    </div>`;
+  inhalt.appendChild(box);
+  const werte = felder.map(() => "");
+  let aktiv = 0;
+  const feldEl = [...box.querySelectorAll(".feld")];
+  const zeichne = () => feldEl.forEach((e, i) => {
+    e.querySelector(".wert").textContent = werte[i];
+    e.classList.toggle("aktiv", i === aktiv && !(akt && akt.gesperrt));
+  });
+  feldEl.forEach(e => e.onclick = () => { if (akt.gesperrt) return; aktiv = +e.dataset.i; zeichne(); });
+  const taste = k => {
+    if (akt.gesperrt) return;
+    let w = werte[aktiv];
+    if (k === "⌫") w = w.slice(0, -1);
+    else if (k === "C") w = "";
+    else if (w.length < 12) w += k;
+    werte[aktiv] = w; zeichne(); setzeBereit();
+    document.getElementById("warn").textContent = "";
+  };
+  box.querySelectorAll(".tasten button").forEach(b => b.onclick = () => taste(b.dataset.k));
+  akt.taste = taste;
+  akt.feldWechsel = () => { aktiv = (aktiv + 1) % felder.length; zeichne(); };
+  return { werte, feldEl, zeichne };
+}
+const UNGUELTIG = "Bitte eine Zahl eingeben, z. B. 3, −2, 1/2 oder 0,5.";
+
+// ---------------------------------------------------------------------
+//  Typ A: Term zum Graphen
+// ---------------------------------------------------------------------
+function aufgabeA(t, m, n, inhalt) {
+  inhalt.innerHTML = `<p class="auftrag">Gezeichnet ist der Graph einer linearen Funktion <i class="v">f</i> mit
+    <span class="formel"><i class="v">f</i>(${X}) = <i class="v">m</i>${X} + <i class="v">n</i></span>.
+    Bestimmen Sie <i class="v">m</i> und <i class="v">n</i>.</p>`;
+  const ks = koordinatensystem();
+  inhalt.appendChild(ks.svg);
+  gerade(ks, m, n);
+  akt = { gesperrt: false, bereit: () => e.werte.every(w => w !== "") };
+  const e = eingabe(inhalt, [{ label: '<i class="v">m</i> =', aria: "Anstieg m" }, { label: '<i class="v">n</i> =', aria: "y-Achsenabschnitt n" }]);
+  knopfLeiste(inhalt);
+  akt.pruefen = () => {
+    const em = lies(e.werte[0]), en = lies(e.werte[1]);
+    if (!em || !en) return { ungueltig: UNGUELTIG };
+    const okm = eq(em, m), okn = eq(en, n);
+    e.feldEl[0].classList.add("gesperrt", okm ? "r" : "f");
+    e.feldEl[1].classList.add("gesperrt", okn ? "r" : "f");
+    e.zeichne();
+    dreieck(ks, m, n);
+    const q = Number(m.d), p = Number(m.n);
+    const weg = p === 0
+      ? `Der Graph verläuft parallel zur <i class="v">x</i>-Achse, also <i class="v">m</i> = 0.`
+      : `Vom Punkt <i class="v">S<sub>y</sub></i> aus geht es ${q} nach rechts und ${Math.abs(p)} nach ${p > 0 ? "oben" : "unten"}, also <i class="v">m</i> = ${zahl(m)}.`;
+    return { ok: okm && okn, text: `${okm && okn ? "" : `Richtig ist <i class="v">m</i> = ${zahl(m)} und <i class="v">n</i> = ${zahl(n)}. `}Der Graph schneidet die
+      <i class="v">y</i>-Achse in ${punkt(Q(0), n, '<i class="v">S<sub>y</sub></i>')}. ${weg}` };
+  };
+}
+
+// ---------------------------------------------------------------------
+//  Typ B: Funktionswert berechnen
+// ---------------------------------------------------------------------
+function aufgabeB(t, m, n, inhalt) {
+  const a = lies(t.a), y = f(m, n, a);
+  inhalt.innerHTML = `<p class="auftrag">Gegeben ist die Funktion <i class="v">f</i> mit</p>
+    <p class="auftrag" style="font-size:1.25em;text-align:center"><span class="formel"><i class="v">f</i>(${X}) = ${term(t.term)}</span></p>
+    <p class="auftrag">Berechnen Sie den Funktionswert <span class="formel"><i class="v">f</i>(${zahl(a)})</span>.</p>`;
+  akt = { gesperrt: false, bereit: () => e.werte[0] !== "" };
+  const e = eingabe(inhalt, [{ label: `<i class="v">f</i>(${zahl(a)}) =`, aria: "Funktionswert" }]);
+  knopfLeiste(inhalt);
+  akt.pruefen = () => {
+    const w = lies(e.werte[0]);
+    if (!w) return { ungueltig: UNGUELTIG };
+    const ok = eq(w, y);
+    e.feldEl[0].classList.add("gesperrt", ok ? "r" : "f"); e.zeichne();
+    return { ok, text: `${ok ? "" : `Richtig ist <span class="formel"><i class="v">f</i>(${zahl(a)}) = ${zahlVoll(y)}</span>. `}Man setzt
+      ${zahl(a)} für ${X} ein: <span class="formel"><i class="v">f</i>(${zahl(a)}) = ${term(t.term, a)} = ${zahl(y)}</span>.` };
+  };
+}
+
+// ---------------------------------------------------------------------
+//  Typ C: Gerade zeichnen (zwei Gitterpunkte antippen)
+// ---------------------------------------------------------------------
+function aufgabeC(t, m, n, inhalt) {
+  inhalt.innerHTML = `<p class="auftrag">Zeichnen Sie den Graphen von <i class="v">f</i> mit ${fGl(m, n)}.
+    Tippen Sie dazu <b>zwei Gitterpunkte</b> an, die auf dem Graphen liegen.</p>`;
+  const ks = koordinatensystem();
+  ks.svg.classList.add("tippen");
+  inhalt.appendChild(ks.svg);
+  const hin = document.createElement("p"); hin.className = "hinweis";
+  hin.textContent = "Erneutes Tippen auf einen Punkt entfernt ihn.";
+  inhalt.appendChild(hin);
+  const eigen = svgEl("g", {}); ks.ebene.appendChild(eigen);
+  let pkte = [];
+  const male = () => {
+    eigen.innerHTML = "";
+    if (pkte.length === 2) {
+      const [a, b] = pkte;
+      if (a[0] === b[0]) {
+        eigen.appendChild(svgEl("line", { x1: ks.px(a[0]), y1: ks.py(-R), x2: ks.px(a[0]), y2: ks.py(R),
+          stroke: "var(--dx)", "stroke-width": 2.6 }));
+      } else {
+        const mm = Q(b[1] - a[1], b[0] - a[0]), nn = sub(Q(a[1]), mul(mm, Q(a[0])));
+        const s = strecke(mm, nn);
+        if (s) eigen.appendChild(svgEl("line", { x1: ks.px(s[0]), y1: ks.py(s[1]), x2: ks.px(s[2]), y2: ks.py(s[3]),
+          stroke: "var(--dx)", "stroke-width": 2.6, "stroke-linecap": "round" }));
+      }
+    }
+    for (const [x, y] of pkte) {
+      eigen.appendChild(svgEl("circle", { cx: ks.px(x), cy: ks.py(y), r: 7, fill: "var(--dx)", stroke: "#fff", "stroke-width": 2 }));
+    }
+    setzeBereit();
+  };
+  ks.svg.addEventListener("pointerdown", ev => {
+    if (akt.gesperrt) return;
+    ev.preventDefault();
+    const pt = ks.svg.createSVGPoint(); pt.x = ev.clientX; pt.y = ev.clientY;
+    const p = pt.matrixTransform(ks.svg.getScreenCTM().inverse());
+    const x = Math.round((p.x - ks.px(0)) / ks.U), y = Math.round((ks.py(0) - p.y) / ks.U);
+    if (Math.abs(x) > R || Math.abs(y) > R) return;
+    const i = pkte.findIndex(q => q[0] === x && q[1] === y);
+    if (i >= 0) pkte.splice(i, 1);
+    else if (pkte.length < 2) pkte.push([x, y]);
+    else { document.getElementById("warn").textContent = "Es sind schon zwei Punkte gesetzt – erst zurücksetzen oder einen Punkt antippen."; return; }
+    document.getElementById("warn").textContent = "";
+    male();
+  });
+  akt = { gesperrt: false, bereit: () => pkte.length === 2, punkte: () => pkte };
+  knopfLeiste(inhalt, `<button class="knopf hell" id="zurueck">Zurücksetzen</button>`);
+  document.getElementById("zurueck").onclick = () => { if (!akt.gesperrt) { pkte = []; male(); document.getElementById("warn").textContent = ""; } };
+  akt.pruefen = () => {
+    const liegt = ([x, y]) => eq(f(m, n, Q(x)), Q(y));
+    const ok = pkte.every(liegt);
+    const zr = document.getElementById("zurueck"); if (zr) zr.disabled = true;
+    hin.remove();
+    // richtige Gerade zum Vergleich einblenden
+    gerade(ks, m, n, "var(--graph)", 2.4, "7 5");
+    for (const [x, y] of pkte) if (!liegt([x, y])) {
+      ks.ebene.appendChild(svgEl("circle", { cx: ks.px(x), cy: ks.py(y), r: 10, fill: "none", stroke: "var(--falsch)", "stroke-width": 2.5 }));
+    }
+    const leg = document.createElement("div"); leg.className = "legende";
+    leg.innerHTML = `<span style="color:var(--dx)">Ihre Gerade</span><span style="color:var(--graph)">Graph von <i class="v">f</i> (gestrichelt)</span>`;
+    ks.svg.after(leg);
+    let text;
+    if (ok) text = `Beide Punkte ${punkt(Q(pkte[0][0]), Q(pkte[0][1]), "P<sub>1</sub>")} und ${punkt(Q(pkte[1][0]), Q(pkte[1][1]), "P<sub>2</sub>")} liegen auf dem Graphen von <i class="v">f</i>.`;
+    else {
+      const [x, y] = pkte.find(p => !liegt(p));
+      text = `Der Punkt ${punkt(Q(x), Q(y))} liegt nicht auf dem Graphen, denn <span class="formel"><i class="v">f</i>(${zahl(Q(x))}) = ${zahl(f(m, n, Q(x)))} ≠ ${zahl(Q(y))}</span>.
+        ${m.n === 0n
+          ? `Der Graph verläuft parallel zur <i class="v">x</i>-Achse durch ${punkt(Q(0), n, '<i class="v">S<sub>y</sub></i>')}.`
+          : `So geht es: ${punkt(Q(0), n, '<i class="v">S<sub>y</sub></i>')} markieren, dann ${Number(m.d)} nach rechts und ${Math.abs(Number(m.n))} nach ${m.n > 0n ? "oben" : "unten"}.`}`;
+    }
+    return { ok, text };
+  };
+}
+
+// ---------------------------------------------------------------------
+//  Typ D: Gleichung zum Graphen zuordnen
+// ---------------------------------------------------------------------
+// Begründung zum gewählten Ablenker (b: Buchstabe, o: gewählte Gerade)
+const ART = {
+  vz: (b, o, m) => `Graph ${b}) hat den Anstieg ${zahl(o.m)}: Das Vorzeichen von <i class="v">m</i> ist vertauscht.`,
+  tausch: (b, o, m) => `Bei Graph ${b}) sind Anstieg und <i class="v">y</i>-Achsenabschnitt vertauscht.`,
+  kehr: (b, o, m) => `Graph ${b}) hat den Anstieg ${zahl(o.m)}, den Kehrwert von ${zahl(m)}.`
+};
+function aufgabeD(t, m, n, inhalt) {
+  inhalt.innerHTML = `<p class="auftrag">Welcher Graph gehört zur Funktion <i class="v">f</i> mit ${fGl(m, n)}? Tippen Sie ihn an.</p>`;
+  const opt = mischen([{ m, n, art: null }].concat(t.ablenker.map(d => ({ m: lies(d.m), n: lies(d.n), art: d.art }))));
+  const wahl = document.createElement("div"); wahl.className = "wahl";
+  const buchst = ["a", "b", "c", "d"];
+  let sel = -1;
+  opt.forEach((o, i) => {
+    const b = document.createElement("button");
+    b.setAttribute("aria-label", "Graph " + buchst[i]);
+    b.innerHTML = `<span class="bu">${buchst[i]})</span>`;
+    const ks = koordinatensystem(true);
+    gerade(ks, o.m, o.n, "var(--graph)", 4.5);
+    b.appendChild(ks.svg);
+    b.onclick = () => { if (akt.gesperrt) return; sel = i;
+      wahl.querySelectorAll("button").forEach((x, j) => x.classList.toggle("sel", j === i)); setzeBereit(); };
+    wahl.appendChild(b);
+  });
+  inhalt.appendChild(wahl);
+  akt = { gesperrt: false, bereit: () => sel >= 0 };
+  knopfLeiste(inhalt);
+  akt.pruefen = () => {
+    const richtig = opt.findIndex(o => o.art === null), ok = sel === richtig;
+    const kn = wahl.querySelectorAll("button");
+    kn[richtig].classList.add("r"); if (!ok) kn[sel].classList.add("f");
+    kn.forEach(x => x.classList.remove("sel"));
+    const p = Number(m.n), q = Number(m.d);
+    const grund = `Er schneidet die <i class="v">y</i>-Achse bei ${zahl(n)}, und von dort geht es ${q} nach rechts und ${Math.abs(p)} nach ${p > 0 ? "oben" : "unten"}.`;
+    return { ok, text: ok ? `Graph ${buchst[richtig]}) passt: ${grund}`
+      : `Richtig ist Graph ${buchst[richtig]}): ${grund} ${ART[opt[sel].art](buchst[sel], opt[sel], m)}` };
+  };
+}
+
+// ---------------------------------------------------------------------
+//  Ergebnis
+// ---------------------------------------------------------------------
+function zeigeErgebnis() {
+  akt = null;
+  app.innerHTML = `<section class="karte"><div class="titel"><span>Ergebnis</span><span>Runde beendet</span></div>
+    <div class="ergebnis"><div>Sie haben</div><div class="gross">${punkte} von ${RUNDE}</div>
+    <div>Punkten erreicht.</div>
+    <ul class="liste">${runde.map((t, i) => `<li><span class="z ${ergebnisse[i] ? "r" : "f"}">${ergebnisse[i] ? "✓" : "✗"}</span>
+      <span>${i + 1}. ${TYPNAME[t.typ]}</span></li>`).join("")}</ul>
+    <div class="knoepfe"><button class="knopf" id="neu">Neue Runde</button></div></div></section>`;
+  document.getElementById("neu").onclick = neueRunde;
+}
+
+// Physische Tastatur (Tablet mit Tastatur, Rechner)
+document.addEventListener("keydown", ev => {
+  if (!akt) { if (ev.key === "Enter") neueRunde(); return; }
+  if (akt.gesperrt) { if (ev.key === "Enter") { const w = document.getElementById("weiter"); if (w) w.click(); } return; }
+  if (ev.key === "Enter") { ev.preventDefault(); pruefe(); return; }
+  if (!akt.taste) return;
+  const map = { Backspace: "⌫", "-": MINUS, "/": "/", ",": ",", ".": ",", Delete: "C" };
+  if (/^\d$/.test(ev.key)) akt.taste(ev.key);
+  else if (map[ev.key]) { ev.preventDefault(); akt.taste(map[ev.key]); }
+  else if (ev.key === "Tab" && akt.feldWechsel) { ev.preventDefault(); akt.feldWechsel(); }
+});
+
+// =====================================================================
+//  Selbsttest (Konsole). Gründliche Prüfung: pruefe_pool_48.py
+// =====================================================================
+(function selbsttest() {
+  const fehler = [];
+  const soll = (roh, w) => { const v = lies(roh); if (w === null ? v !== null : !(v && eq(v, lies(w)))) fehler.push(`lies(${roh})`); };
+  soll("3", "3"); soll("-2", "-2"); soll("−2", "-2"); soll("1/2", "1/2"); soll("-1/2", "-1/2");
+  soll("1/-2", "-1/2"); soll("0,5", "1/2"); soll("0.5", "1/2"); soll(",5", "1/2"); soll("2,50", "5/2");
+  soll("4/8", "1/2"); soll("1,5/3", "1/2"); soll("0,333", "333/1000");
+  soll("", null); soll("-", null); soll("1/0", null); soll("1/", null); soll("1,2,3", null); soll("--1", null);
+  if (eq(lies("0,333"), lies("1/3"))) fehler.push("0,333 = 1/3?");
+  const typen = {};
+  for (const t of POOL) {
+    typen[t.typ] = (typen[t.typ] || 0) + 1;
+    const m = lies(t.m), n = lies(t.n);
+    if (!m || !n) fehler.push(t.id + ": m/n");
+    if (t.typ === "B" && !eq(f(m, n, lies(t.a)), lies(t.loesung))) fehler.push(t.id + ": Lösung");
+  }
+  for (let k = 0; k < 200; k++) {
+    const r = zieheRunde(), ty = new Set(r.map(t => t.typ));
+    if (r.length !== RUNDE || ty.size !== 4 || new Set(r).size !== RUNDE) { fehler.push("Runde"); break; }
+  }
+  console.log(`Selbsttest: ${POOL.length} Aufgaben`, typen, fehler.length ? fehler : "alles in Ordnung");
+  window.__selbsttest = fehler;
+})();
+
+neueRunde();
+</script>
+</body>
+</html>
